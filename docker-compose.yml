@@ -1,0 +1,93 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: bigdata-postgres
+    environment:
+      POSTGRES_DB: bigdata_lab
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    networks:
+      - main
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: bigdata-pgadmin
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: george.ermekov@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: test
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5433:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - main
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.8-alpine
+    container_name: bigdata-clickhouse
+    environment:
+      CLICKHOUSE_DB: reports
+      CLICKHOUSE_USER: app
+      CLICKHOUSE_PASSWORD: app
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+    networks:
+      - main
+
+  tabix:
+    image: spoonest/clickhouse-tabix-web-client:latest
+    container_name: bigdata-tabix
+    ports:
+      - "8125:80"
+    depends_on:
+      - clickhouse
+    networks:
+      - main
+
+  spark:
+    build:
+      context: .
+      dockerfile: docker/spark/Dockerfile
+    container_name: bigdata-spark
+    environment:
+      PG_HOST: postgres
+      PG_PORT: 5432
+      PG_DB: bigdata_lab
+      PG_USER: app
+      PG_PASSWORD: app
+      CH_HOST: clickhouse
+      CH_PORT: 8123
+      CH_DB: reports
+      CH_USER: app
+      CH_PASSWORD: app
+      PYTHONUNBUFFERED: "1"
+    command: ["sleep", "infinity"]
+    ports:
+      - "4040:4040"
+    volumes:
+      - ./:/opt/project
+    depends_on:
+      - postgres
+      - clickhouse
+    networks:
+      - main
+
+volumes:
+  postgres-data:
+  pgadmin-data:
+  clickhouse-data:
+
+networks:
+  main:
+    driver: bridge
