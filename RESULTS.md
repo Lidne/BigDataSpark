@@ -29,15 +29,16 @@ docker compose up -d --build
 
 ## Прогнать Spark jobs:
 > У меня джупитер ноутбук через одно место работает с poetry, поэтому я сделал так через простые скрипты
+> P.S. во всем виноват python environments, который решил сам включиться
 
 - Из raw в dwh
 ```bash
-docker compose exec -T spark /opt/spark/bin/spark-submit --master local[*] /opt/project/src/spark_star_to_postgres.py
+docker compose exec -T spark /opt/spark/bin/spark-submit --master 'local[*]' /opt/project/src/spark_star_to_postgres.py
 ```
 
 - Отчеты в clickhouse
 ```bash
-docker compose exec -T spark /opt/spark/bin/spark-submit --master local[*] /opt/project/src/spark_reports_to_clickhouse.py
+docker compose exec -T spark /opt/spark/bin/spark-submit --master 'local[*]' /opt/project/src/spark_reports_to_clickhouse.py
 ```
 
 ## Скрипты

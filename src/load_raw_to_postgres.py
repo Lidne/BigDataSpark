@@ -10,7 +10,7 @@ import psycopg2
 from psycopg2 import OperationalError
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DATA_DIR = ROOT / "\u0438\u0441\u0445\u043e\u0434\u043d\u044b\u0435 \u0434\u0430\u043d\u043d\u044b\u0435"
+DEFAULT_DATA_DIR = ROOT / "source_data"
 
 RAW_TABLE_DDL = """
 CREATE SCHEMA IF NOT EXISTS raw;

@@ -34,7 +34,17 @@ def as_date(column_name: str):
 
 
 def build_spark() -> SparkSession:
-    return SparkSession.builder.appName("star-to-postgres").config("spark.sql.session.timeZone", "UTC").getOrCreate()
+    return (
+        SparkSession.builder.appName("star-to-postgres")
+        .config("spark.sql.session.timeZone", "UTC")
+        .config("spark.sql.shuffle.partitions", "16")
+        .config("spark.default.parallelism", "8")
+        .config("spark.sql.adaptive.enabled", "true")
+        .config("spark.driver.memory", "1g")
+        .config("spark.executor.memory", "1g")
+        .config("spark.driver.maxResultSize", "512m")
+        .getOrCreate()
+    )
 
 
 def main() -> None:
@@ -175,21 +185,6 @@ def main() -> None:
         .orderBy("product_id")
     )
 
-    dim_dates = (
-        base_df.select(
-            "date_id",
-            F.col("sale_date_parsed").alias("full_date"),
-        )
-        .where(F.col("date_id").isNotNull())
-        .dropDuplicates(["date_id"])
-        .withColumn("year", F.year("full_date"))
-        .withColumn("month", F.month("full_date"))
-        .withColumn("day", F.dayofmonth("full_date"))
-        .withColumn("quarter", F.quarter("full_date"))
-        .withColumn("month_name", F.date_format("full_date", "MMMM"))
-        .orderBy("date_id")
-    )
-
     fact_sales = (
         base_df.select(
             F.col("id").alias("sale_id"),
@@ -216,7 +211,6 @@ def main() -> None:
         "dwh.dim_suppliers": dim_suppliers,
         "dwh.dim_stores": dim_stores,
         "dwh.dim_products": dim_products,
-        "dwh.dim_dates": dim_dates,
         "dwh.fact_sales": fact_sales,
     }
 
