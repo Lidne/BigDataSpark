@@ -34,6 +34,31 @@ def drop_clickhouse_tables(host: str, port: int, db: str, user: str, password: s
         execute_clickhouse_query(host, port, user, password, f"DROP TABLE IF EXISTS {db}.{table_name}")
 
 
+def clickhouse_table_options(table_name: str) -> str:
+    order_by_map = {
+        "product_top10_sales": "(total_units_sold, total_revenue, product_id)",
+        "product_category_revenue": "(product_category)",
+        "product_rating_reviews": "(product_id)",
+        "customer_top10_spend": "(total_spent, customer_id)",
+        "customer_country_distribution": "(customer_country)",
+        "customer_avg_check": "(avg_check, customer_id)",
+        "time_sales_trends": "(period_type, year, month)",
+        "time_revenue_period_comparison": "(year, quarter)",
+        "time_avg_order_size_by_month": "(year, month)",
+        "store_top5_revenue": "(total_revenue, store_id)",
+        "store_sales_distribution": "(store_country, store_city)",
+        "store_avg_check": "(avg_check, store_id)",
+        "supplier_top5_revenue": "(total_revenue, supplier_id)",
+        "supplier_avg_product_price": "(avg_product_price, supplier_id)",
+        "supplier_sales_by_country": "(supplier_country)",
+        "quality_rating_extremes": "(rating_group, avg_rating, product_id)",
+        "quality_rating_sales_correlation": "(rating_sales_corr)",
+        "quality_most_reviewed_products": "(review_count, product_id)",
+    }
+    order_by = order_by_map.get(table_name, "tuple()")
+    return f"ENGINE = MergeTree() ORDER BY {order_by}"
+
+
 def write_clickhouse(dataframe: DataFrame, table_name: str, jdbc_url: str, user: str, password: str) -> None:
     (
         dataframe.write.format("jdbc")
@@ -43,7 +68,7 @@ def write_clickhouse(dataframe: DataFrame, table_name: str, jdbc_url: str, user:
         .option("dbtable", table_name)
         .option("user", user)
         .option("password", password)
-        .option("createTableOptions", "ENGINE = MergeTree() ORDER BY tuple()")
+        .option("createTableOptions", clickhouse_table_options(table_name))
         .save()
     )
 
